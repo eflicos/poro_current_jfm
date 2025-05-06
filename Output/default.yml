@@ -1,0 +1,11 @@
+L: 5
+Q: 1.0
+config_file: ./Output/config.yml
+dx_init: 0.001
+nx: 100
+output_dir: ./Output/
+perm_mean: !!python/tuple
+- 1.0
+perm_type: uniform
+tmax: 100
+tplotno: 20
