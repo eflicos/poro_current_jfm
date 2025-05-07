@@ -1,9 +1,9 @@
 # poro_current_jfm
 
 This code solves the (dimensionless) vertically integrated gravity current equations for the thickness of a gravity current, $h$, with a spatially varying permeability field, $k$,
-$$
-\frac{\partial h}{\partial t} = \nabla \dot \left( k h \nabla h \right),
-$$
+``` math
+\frac{\partial h}{\partial t} = \nabla \dot ( k h \nabla h ),
+```
 on a rectangular domain $0\le x \le X$, $0 \le y \le Y$,
 subject to a constant injection at $x=0$ along the width of the domain and no flux across the other three boundaries.
 
