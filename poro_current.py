@@ -1,11 +1,5 @@
 """
 Integrated gravity current equations. Line injection
-
-From command line, call as: 
-python3 poro_current.py --Q_inj <Q_inj> --tmax <tmax> --dx <dx_init> --perm_ampl <perm_ampl> --perm_mean <perm_mean> --perm_wl <perm_wl> --output_dir <output_dir>
-
-From python, import and call as: 
-poro_current.model(Q_inj=Q_inj,tmax=tmax,dx_init=dx_init,perm_ampl=perm_ampl,perm_mean=perm_mean,perm_wl=perm_wl,output_dir=output_dir)
 """
 # Based on poro_nondimensional.f90
 # Translated to python by ejf61
@@ -20,6 +14,9 @@ import argparse
 from time import time
 import random
 from pathlib import Path
+import sys
+
+sys.path.append("./Input_generation/")
 
 # My other scripts
 import generate_permeability as gp
@@ -183,7 +180,7 @@ def model(Q_inj=input_default['Q'],tmax=input_default['tmax'],tplotno=input_defa
     
     # Injection point
     Q = np.zeros((nx,ny))
-    Q[1,1:-1] = 1
+    Q[1,1:-1] = Q_inj
     np.savetxt(output_dir + 'Other/injection.txt',Q)
     
     # Permeability
