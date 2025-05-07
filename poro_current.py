@@ -30,7 +30,6 @@ import generate_plot_times as gt
 # Injection grid point
 # I know this is set as a variable, but I've assumed it in so many places
 Q_x = 1
-#Q_y = 1
 
 itmax = 200000 # max number of iterations
 errmax = 1e-5 # max error allowed in timestep check 
@@ -38,7 +37,6 @@ threshold = 1e-4 # height below which we take as 0
 
 # Save full height and permeability arrays?
 save_height = True
-#save_perm = True
 
 # The time parameters can probably be changed
 dtinit = 1e-12 # initial timestep
@@ -53,7 +51,6 @@ input_default = {
     'tmax': 1000,
     'tplotno': 50,
     'nx': 100,
-    #'ny': 100,
     'L':4,
     'dx_init': 2**(-10),
     'perm_type': 'cos', # Types 'uniform', 'cos', 'gauss', 'channel'
@@ -71,7 +68,6 @@ def main():
     parser.add_argument('--tmax', type=int, help='Maximum time')
     parser.add_argument('--tplotno', type=int, help='Number of saves')
     parser.add_argument('--nx', type=int, help='Number of grid points in x')
-    #parser.add_argument('--ny', type=int, help='Number of grid points in y')
     parser.add_argument('--L', type=int, help='Size of domain in y')
     parser.add_argument('--dx_init', type=float, help='Intial grid spacing')
     parser.add_argument('--perm_type', type=str, help='Type of permeability field')
@@ -127,7 +123,7 @@ def model(Q_inj=input_default['Q'],tmax=input_default['tmax'],tplotno=input_defa
 
     # Generate plot times
     tplot = gt.log_dt(t0,tmax,tplotno)
-    if len(perm_wl)>1: # len(perm_wl)=1 throws errors if perm_wl is int 
+    if len(perm_wl)>1: # len(perm_wl)==1 throws errors if perm_wl is int 
         # Splits tplotno into three
         # third before first est transition time
         # third after last est transition time
@@ -142,7 +138,7 @@ def model(Q_inj=input_default['Q'],tmax=input_default['tmax'],tplotno=input_defa
     
     # Initialise variables
     dx = dx_init
-    dx_max = 1#10#perm_wl/2 # Refine me!!
+    dx_max = 1 # maximum grid spacing
     
     # Not regridding in y, so set dy immediately to max
     pts_per_perm = 16 # number of grid pts per wavelength in y    
@@ -312,10 +308,6 @@ def model(Q_inj=input_default['Q'],tmax=input_default['tmax'],tplotno=input_defa
                 np.savetxt(output_dir + './Current_Thickness/h'+'{0:02d}'.format(plot)+'.txt', h)
                 save_var(t,output_dir+'./Other/plot_height_times.txt',plot)
             
-            # Save permeability field
-            # if save_perm:
-                # np.savetxt(output_dir + './Permeability/perm'+'{0:02d}'.format(plot)+'.txt', perm)
-            
             # Save actual time value and integrated volume to file
             save_var(t,output_dir+'./Other/plot_times.txt',plot)
             save_var(vol_calc,output_dir+'./Other/volume.txt',plot)
@@ -403,7 +395,6 @@ def set_var_cur(h,perm,h_top,nx,ny,dx,dx_mid,dy):
     
     # Set variables for x
     # Diffusive term
-    # diffx[:] = (h[1:nx,0:ny-1]*perm[1:nx,0:ny-1] + h[0:nx-1,0:ny-1]*perm[0:nx-1,0:ny-1])/2
     diffx[:-1] = (h[1:nx-1,0:ny-1]*perm[1:nx-1,0:ny-1]*dx[:-1] + h[0:nx-2,0:ny-1]*perm[0:nx-2,0:ny-1]*dx[1:])/(2*dx_mid[:-1])
     # Advective term
     advx[:] = - (perm[1:nx,0:ny-1] + perm[0:nx-1,0:ny-1])/2 * (h_top[1:nx,0:ny-1] - h_top[0:nx-1,0:ny-1])/dx_mid
@@ -464,10 +455,6 @@ def set_eqnx_cur(h,cxp,cxm,cyp,cym,Q,t,dt,nx,ny,dx,dy,output_dir): # output_dir 
     h_out = np.zeros((nx,ny))
     abx = np.zeros((3,nx)) # 0 is upper, 1 diag, 2 is lower
     
-    # initialise first and last column - only the middle ones are overwritten with tridiag
-    # h_out[:,0] = h[:,0]
-    # h_out[:,-1] = h[:,-1]
-
     # Set up tridiagonal matrix
     # LnXn-1 + DnXn + UnXn+1 = Bn
     
@@ -523,10 +510,6 @@ def set_eqny_cur(h,cxp,cxm,cyp,cym,Q,t,dt,nx,ny,dx,dy,output_dir):
     h_out = np.zeros((nx,ny))
     aby = np.zeros((3,ny)) # 0 is upper, 1 diag, 2 is lower
     
-    # initialise first and last row - only the middle ones are overwritten with tridiag
-    #h_out[0] = h[0]+Q[0]*dt/dx#0
-    #h_out[-1] = h[-1]
-    
     # Set up tridiagonal matrix
     # LnXn-1 + DnXn + UnXn+1 = Bn
     
@@ -573,9 +556,7 @@ def error_size(h1,h2,nx,ny):
     Uses L2 norm
     """
     err = np.linalg.norm( (h1 - h2) / np.amax(np.abs(h2)) ) / (nx*ny)
-    #if np.amax(np.abs(h2))<10e-10:
-    #    err*=10e-5
-    # logging.info(f'error size: {err}')
+    
     return err
 
 
@@ -604,11 +585,9 @@ def check_regrid(h,t,dt,nx,ny,dx,output_dir):
     (height, nx, ny, dx, dx_max)
     Checks whether it is time to regrid
     """
-    # Find max value in last 10% of rows and columns
+    # Find max value in last 10% of rows
     num_row = int(nx/10)
-    # num_col = int(ny/10)
     row_max = np.max(h[-num_row:,:])
-    # col_max = np.max(h[:,-num_col:])
     
     # Comparing with a value smaller than threshold for non-zero height
     # Small values will propagate ahead of the edge of the current - this is to catch those
@@ -723,7 +702,6 @@ def regrid(h,perm,t,dt,nx,ny,dx,dx_mid,dy,dx_max,perm_ampl,perm_mean,perm_wl,out
     edge_old = np.sum(dx_mid[2:ind_edge_old-1])+np.float(dx_mid[1])/2
     edge_regrid = np.sum(dx_mid_regrid[2:ind_edge_regrid-1])+np.float(dx_mid_regrid[1])/2
     edge_diff = (edge_regrid - edge_old)/edge_old * 100
-    #print(edge_diff)
     
     logging.debug(f'Regridding edge check (line {ind_check}). Old edge: {edge_old:.3g}, new edge: {edge_regrid:.3g}, change: {edge_diff:.3g}%')
     if np.abs(edge_diff)>0.1:
